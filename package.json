@@ -1,0 +1,13 @@
+{
+  "name": "vakeel-ai-netlify",
+  "version": "1.0.0",
+  "description": "Backend function for Vakeel-AI on Netlify.",
+  "main": "netlify/functions/gemini.js",
+  "scripts": {
+    "start": "netlify dev"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "node-fetch": "^2.7.0"
+  }
+}

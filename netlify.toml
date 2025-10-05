@@ -1,0 +1,17 @@
+# Netlify configuration file
+
+[build]
+  # This command is run when you deploy the site.
+  # It installs the dependencies needed for our serverless function.
+  command = "npm install"
+  # This is the directory where our serverless functions are located.
+  functions = "netlify/functions"
+  # This is the directory that contains the static files of your website.
+  publish = "/"
+
+[[redirects]]
+  # This rule proxies all requests from "/api/*" to our serverless function.
+  # This means your frontend code can still call "/api/gemini" as before.
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

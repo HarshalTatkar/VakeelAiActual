@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vakeel-AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- pdf.js library for reading PDF content -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a3a3a3;
+            --border-color: #3a3a3a;
+            --primary-accent: #3b82f6; /* Blue */
+            --gold-accent: #f59e0b;   /* Gold/Amber */
+            --danger: #ef4444;       /* Red */
+            --success: #22c55e;      /* Green */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overscroll-behavior: none;
+        }
+
+        /* --- App Structure --- */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            background-color: var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            flex-grow: 1;
+            width: 100%;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .screen-content {
+            padding: 16px;
+            flex-grow: 1;
+            padding-bottom: 90px; /* Space for bottom nav */
+        }
+        
+        .screen-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .screen-header .title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .full-center-screen {
+             display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        /* --- Common Components --- */
+        .btn {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background-color: #4a4a4a;
+        }
+
+        .btn.primary {
+            background-color: var(--primary-accent);
+            border-color: var(--primary-accent);
+            color: white;
+        }
+        
+        .btn.primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .card-clickable {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .card-clickable:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .input-group input, .input-group textarea, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .input-group select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3a3a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+        
+        .input-group input:disabled {
+            opacity: 0.6;
+        }
+        
+        .degree-input-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .degree-input-container input {
+            flex-grow: 1;
+        }
+        
+        .degree-input-container .btn-sm {
+            flex-shrink: 0;
+            width: auto;
+        }
+        
+        .red-flag-highlight {
+            background-color: rgba(239, 68, 68, 0.2);
+            border-bottom: 2px solid var(--danger);
+            padding: 2px 0;
+        }
+
+
+        /* --- Login Screen --- */
+        .logo-container {
+            margin-bottom: 24px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(145deg, var(--primary-accent), var(--gold-accent));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .app-name {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .tagline {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .auth-options {
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .auth-options .btn {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--text-secondary);
+            margin: 24px 0;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .divider:not(:empty)::before {
+            margin-right: .5em;
+        }
+        .divider:not(:empty)::after {
+            margin-left: .5em;
+        }
+        
+        .text-link {
+            color: var(--primary-accent);
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 480px;
+            margin: 0 auto;
+            background-color: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 1500;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            cursor: pointer;
+            flex-grow: 1;
+            padding: 4px;
+            font-size: 24px;
+        }
+        
+        .nav-item .label {
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .nav-item.active {
+            color: var(--primary-accent);
+        }
+
+        /* --- Dashboard & Cases --- */
+        .greeting {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+        
+        .hearing-card, .deadline-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .hearing-card .time-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .time-bar {
+            width: 4px;
+            height: 40px;
+            background-color: var(--primary-accent);
+            border-radius: 2px;
+        }
+        
+        .deadline-item .due-date.urgent {
+            color: var(--gold-accent);
+            font-weight: 600;
+        }
+        
+        .case-info-detail {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            display: block;
+        }
+        
+        .billing-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        .status-badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+        .status-badge.paid {
+            color: var(--success);
+            background-color: rgba(34, 197, 94, 0.1);
+        }
+         .status-badge.unpaid {
+            color: var(--gold-accent);
+            background-color: rgba(245, 158, 11, 0.1);
+        }
+
+
+        .fab {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background-color: var(--primary-accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+        }
+        
+        /* --- Bottom Sheet --- */
+        .bottom-sheet-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .bottom-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            max-width: 480px;
+            margin: 0 auto;
+            background-color: var(--bg-secondary);
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            padding: 16px;
+            padding-bottom: 32px;
+            z-index: 2001;
+            transition: bottom 0.3s ease;
+        }
+        
+        .bottom-sheet-backdrop.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .bottom-sheet.visible {
+            bottom: 0;
+        }
+
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background-color: var(--border-color);
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+        
+        .sheet-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .sheet-option {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .sheet-option:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .sheet-option .icon {
+            font-size: 22px;
+        }
+
+        /* --- Case Details Tabs --- */
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tab-item {
+            flex-grow: 1;
+            text-align: center;
+            padding: 12px 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-item.active {
+            color: var(--primary-accent);
+            border-bottom-color: var(--primary-accent);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 16px 0;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .strength { color: var(--success); }
+        .weakness { color: var(--danger); }
+        .insight-list li { margin-left: 20px; margin-bottom: 8px; }
+
+        /* --- Settings --- */
+        .menu-list-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        
+        .menu-list-item:hover {
+            background-color: var(--bg-secondary);
+        }
+        
+        .menu-list-item .icon {
+            font-size: 22px;
+        }
+
+        .menu-list-item .text-content {
+            flex-grow: 1;
+        }
+        
+        .menu-list-item .title {
+            font-weight: 500;
+        }
+        
+        .menu-list-item .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        
+        .menu-list-item .chevron {
+            color: var(--text-secondary);
+        }
+        
+        .btn-logout {
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.5);
+            background-color: transparent;
+            margin-top: 24px;
+        }
+        
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .toggle-switch input { display: none; }
+        .toggle-switch .slider {
+            width: 42px; height: 24px; background-color: var(--bg-tertiary);
+            border-radius: 12px; position: relative; cursor: pointer; transition: background-color 0.2s;
+        }
+        .toggle-switch .slider:before {
+            content: ''; position: absolute; left: 3px; top: 3px;
+            width: 18px; height: 18px; background-color: white;
+            border-radius: 50%; transition: transform 0.2s;
+        }
+        .toggle-switch input:checked + .slider { background-color: var(--primary-accent); }
+        .toggle-switch input:checked + .slider:before { transform: translateX(18px); }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            text-align: center;
+        }
+        
+        .stat-item .value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .stat-item .label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .subscription-plans {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .plan-card {
+            border: 2px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .plan-card.recommended {
+            border-color: var(--gold-accent);
+        }
+        .plan-card .badge {
+            position: absolute;
+            top: 10px;
+            right: -30px;
+            background-color: var(--gold-accent);
+            color: black;
+            padding: 4px 30px;
+            font-size: 12px;
+            font-weight: 600;
+            transform: rotate(45deg);
+        }
+
+        /* --- AI Assistant (Chatbot) --- */
+        .chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 16px;
+            /* Add space at the bottom for the fixed input form and nav bar */
+            padding-bottom: 140px;
+        }
+
+        .chat-message {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-bubble {
+            padding: 10px 14px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .chat-message.user {
+            align-items: flex-end;
+        }
+        .chat-message.user .chat-bubble {
+            background-color: var(--primary-accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-message.ai {
+            align-items: flex-start;
+        }
+        .chat-message.ai .chat-bubble {
+            background-color: var(--bg-secondary);
+            border-bottom-left-radius: 4px;
+        }
+        .chat-message.ai .chat-bubble.loading {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .chat-input-form {
+            position: fixed; /* Take it out of the document flow */
+            bottom: 60px;    /* Position it right above the nav bar, with a small gap */
+            left: 0;
+            right: 0;
+            max-width: 480px; /* Match the app container */
+            margin: 0 auto;   /* Center it */
+            z-index: 100;     /* Ensure it's above the chat container */
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+        }
+        .chat-input-form input {
+            flex-grow: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .chat-input-form button {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 0;
+            background-color: var(--primary-accent);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* --- Invoice Preview --- */
+        #invoice-preview-content {
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #000;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SCREEN: LOGIN -->
+        <section id="screen-login" class="screen active">
+            <div class="screen-content full-center-screen">
+                <div class="logo-container">
+                    <div class="logo">VA</div>
+                    <h1 class="app-name" data-lang-key="appName">Vakeel-AI</h1>
+                    <p class="tagline" data-lang-key="tagline">Your Intelligent Legal Partner</p>
+                </div>
+                <div class="auth-options">
+                    <button class="btn" onclick="login('google')">
+                        <span class="icon">G</span>
+                        <span data-lang-key="loginGoogle">Continue with Google</span>
+                    </button>
+                    <button class="btn" onclick="login('facebook')">
+                        <span class="icon">f</span>
+                        <span>Continue with Facebook</span>
+                    </button>
+                    <div class="divider">OR</div>
+                    <button class="btn" onclick="goToScreen('email-login')">
+                        <span class="icon">✉️</span>
+                        <span data-lang-key="loginEmail">Continue with Email</span>
+                    </button>
+                    <p style="margin-top: 24px; color: var(--text-secondary);">
+                        Don't have an account? <span class="text-link" onclick="goToScreen('signup')">Sign Up</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- SCREEN: EMAIL LOGIN -->
+        <section id="screen-email-login" class="screen">
+            <div class="screen-header">
+                <button class="btn-sm" onclick="goBack()">Back</button>
+                <h1 class="title">Login</h1>
+                <div style="width: 50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div class="input-group">
+                    <label data-lang-key="emailAddress">Email Address</label>
+                    <input type="email" placeholder="you@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" placeholder="••••••••">
+                </div>
+                <button class="btn primary" onclick="login('email')">Login</button>
+            </div>
+        </section>
+        
+        <!-- SCREEN: SIGNUP -->
+        <section id="screen-signup" class="screen">
+            <div class="screen-header">
+                <button class="btn-sm" onclick="goBack()">Back</button>
+                <h1 class="title">Create Account</h1>
+                <div style="width: 50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div class="input-group">
+                    <label data-lang-key="fullName">Full Name</label>
+                    <input type="text" id="signup-name" placeholder="Adv. Your Name">
+                </div>
+                <div class="input-group">
+                    <label data-lang-key="emailAddress">Email Address</label>
+                    <input type="email" id="signup-email" placeholder="you@example.com">
+                </div>
+                 <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="signup-password" placeholder="••••••••">
+                </div>
+                <div class="input-group">
+                    <label data-lang-key="mobile">Mobile Number</label>
+                    <input type="tel" id="signup-mobile" placeholder="+91 ...">
+                </div>
+                 <div class="input-group">
+                    <label data-lang-key="barId">Bar Council ID</label>
+                    <input type="text" id="signup-bar-id" placeholder="e.g., MAH/1234/2015">
+                </div>
+                <button class="btn primary" onclick="handleSignup()">Sign Up</button>
+            </div>
+        </section>
+
+
+        <!-- SCREEN: DASHBOARD -->
+        <section id="screen-dashboard" class="screen">
+            <div class="screen-content">
+                <h1 class="greeting" id="dashboard-greeting"></h1>
+                <h2 class="section-title" data-lang-key="todaysHearings">Today's Hearings</h2>
+                <div class="card hearing-card">
+                    <div class="time-info">
+                        <div class="time-bar"></div>
+                        <div>
+                            <div>10:30 AM</div>
+                            <div style="color: var(--text-secondary);">State of Maharashtra vs. Anil Sharma</div>
+                        </div>
+                    </div>
+                    <div><span data-lang-key="courtroom">Courtroom</span> No. 4B</div>
+                </div>
+                 <div class="card hearing-card">
+                    <div class="time-info">
+                        <div class="time-bar" style="background-color: var(--gold-accent);"></div>
+                        <div>
+                            <div>02:15 PM</div>
+                            <div style="color: var(--text-secondary);">ABC Corp vs. XYZ Industries</div>
+                        </div>
+                    </div>
+                    <div><span data-lang-key="courtroom">Courtroom</span> No. 11A</div>
+                </div>
+
+                <h2 class="section-title" data-lang-key="upcomingDeadlines">Upcoming Deadlines (Next 7 Days)</h2>
+                <div class="card deadline-item">
+                    <div>File Vakalatnama - Sharma Case</div>
+                    <div class="due-date urgent"><span data-lang-key="due">Due</span>: <span data-lang-key="tomorrow">Tomorrow</span></div>
+                </div>
+                <div class="card deadline-item">
+                    <div>Submit Written Arguments - ABC Corp</div>
+                    <div class="due-date"><span data-lang-key="due">Due</span>: in 3 days</div>
+                </div>
+            </div>
+            <div class="fab" onclick="toggleBottomSheet('add-menu', true)">+</div>
+        </section>
+
+        <!-- SCREEN: ALL CASES -->
+        <section id="screen-all-cases" class="screen">
+             <div class="screen-header">
+                <h1 class="title" data-lang-key="allCases">All Cases</h1>
+                <span class="icon" style="font-size:24px;">🔍</span>
+            </div>
+            <div class="screen-content">
+                <div class="card card-clickable" onclick="goToScreen('case-details')">
+                    <strong>State of Maharashtra vs. Anil Sharma</strong>
+                    <span class="case-info-detail">CR/2025/5981 • Bail Hearing</span>
+                    <span class="case-info-detail"><strong><span data-lang-key="nextHearing">Next Hearing</span>:</strong> 03 Oct 2025 - Thane Sessions Court, Room 4B</span>
+                </div>
+                 <div class="card card-clickable" onclick="goToScreen('case-details')">
+                    <strong>ABC Corp vs. XYZ Industries</strong>
+                     <span class="case-info-detail">COM/2024/123 • Evidence Submission</span>
+                     <span class="case-info-detail"><strong><span data-lang-key="nextHearing">Next Hearing</span>:</strong> 05 Oct 2025 - Bombay High Court, Room 11A</span>
+                </div>
+                <div class="card card-clickable" onclick="goToScreen('case-details')">
+                    <strong>P. Verma vs. S. Gupta</strong>
+                     <span class="case-info-detail">CIVIL/2023/987 • Property Dispute</span>
+                     <span class="case-info-detail"><strong><span data-lang-key="nextHearing">Next Hearing</span>:</strong> 08 Oct 2025 - Pune Civil Court, Room 2</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- SCREEN: CLIENTS -->
+        <section id="screen-clients" class="screen">
+            <div class="screen-header">
+                <h1 class="title" data-lang-key="clients">Clients</h1>
+                 <span class="icon" style="font-size:24px;">🔍</span>
+            </div>
+             <div class="screen-content">
+                <div class="card card-clickable" onclick="goToClientDetails('Anil Sharma', 'anil.sharma@example.com', 'State of Maharashtra vs. Anil Sharma')">
+                    <strong>Anil Sharma</strong>
+                    <p style="color:var(--text-secondary); font-size: 14px; margin-top: 4px;">1 Active Case</p>
+                </div>
+                <div class="card card-clickable" onclick="goToClientDetails('Priya Singh', 'priya.singh@example.com', 'ABC Corp vs. XYZ Industries')">
+                    <strong>Priya Singh</strong>
+                    <p style="color:var(--text-secondary); font-size: 14px; margin-top: 4px;">1 Active Case</p>
+                </div>
+                 <div class="card card-clickable" onclick="goToClientDetails('Rohan Mehta', 'rohan.mehta@example.com', 'Mehta Family Trust Matter')">
+                    <strong>Rohan Mehta</strong>
+                    <p style="color:var(--text-secondary); font-size: 14px; margin-top: 4px;">1 Active Case</p>
+                </div>
+                 <div class="card card-clickable" onclick="goToClientDetails('Sunita Gupta', 'sunita.gupta@example.com', 'P. Verma vs. S. Gupta')">
+                    <strong>Sunita Gupta</strong>
+                    <p style="color:var(--text-secondary); font-size: 14px; margin-top: 4px;">1 Active Case</p>
+                </div>
+                <div class="card card-clickable" onclick="goToClientDetails('Vikram Rathore', 'vikram.rathore@example.com', 'Rathore Holdings vs. State')">
+                    <strong>Vikram Rathore</strong>
+                    <p style="color:var(--text-secondary); font-size: 14px; margin-top: 4px;">1 Active Case</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- SCREEN: CLIENT DETAILS -->
+        <section id="screen-client-details" class="screen">
+            <div class="screen-header">
+                <button class="btn-sm" onclick="goBack()" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="clientDetails">Client Details</h1>
+                <div style="width:50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div id="client-info-card" class="card">
+                    <h2 id="client-name-details" style="font-size: 20px;"></h2>
+                    <p id="client-email-details" style="color: var(--text-secondary); margin-top: 4px;"></p>
+                </div>
+                <h3 class="section-title" data-lang-key="associatedCases">Associated Cases</h3>
+                <div id="client-cases-list"></div>
+            </div>
+        </section>
+
+        <!-- SCREEN: AI ASSISTANT -->
+        <section id="screen-ai-assistant" class="screen">
+            <div class="screen-header">
+                <h1 class="title" data-lang-key="aiAssistant">AI Legal Assistant</h1>
+            </div>
+            <div class="chat-container" id="chat-container">
+                 <div class="chat-message ai">
+                    <div class="chat-bubble" data-lang-key="aiWelcome">
+                        Hello! I am your AI Legal Assistant powered by Gemini. How can I help you today? You can ask me about legal precedents, drafting help, or case strategies.
+                    </div>
+                </div>
+            </div>
+            <form class="chat-input-form" id="chat-form">
+                <input type="text" id="chat-input" placeholder="Ask a legal question..." data-lang-key="askPlaceholder" required>
+                <button type="submit" data-lang-key="send">Send</button>
+            </form>
+        </section>
+
+        <!-- SCREEN: SETTINGS -->
+        <section id="screen-settings" class="screen">
+            <div class="screen-header">
+                <h1 class="title" data-lang-key="settings">Settings</h1>
+            </div>
+            <div class="screen-content">
+                <div class="menu-list">
+                    <div class="menu-list-item" onclick="goToScreen('settings-profile')">
+                        <span class="icon">👤</span>
+                        <div class="text-content">
+                            <div class="title" data-lang-key="profile">Profile</div>
+                            <div class="subtitle" data-lang-key="profileSub">Manage your details</div>
+                        </div>
+                        <span class="chevron">></span>
+                    </div>
+                    <div class="menu-list-item" onclick="goToScreen('settings-notifications')">
+                        <span class="icon">🔔</span>
+                        <div class="text-content">
+                            <div class="title" data-lang-key="notifications">Notifications</div>
+                            <div class="subtitle" data-lang-key="notificationsSub">Hearing alerts, reminders</div>
+                        </div>
+                        <span class="chevron">></span>
+                    </div>
+                    <div class="menu-list-item" onclick="goToScreen('settings-subscription')">
+                        <span class="icon">💳</span>
+                        <div class="text-content">
+                            <div class="title" data-lang-key="subscription">Subscription Management</div>
+                            <div class="subtitle" data-lang-key="subscriptionSub">Plan, invoices</div>
+                        </div>
+                        <span class="chevron">></span>
+                    </div>
+                    <div class="menu-list-item" onclick="goToScreen('settings-language')">
+                        <span class="icon">🌐</span>
+                        <div class="text-content">
+                            <div class="title" data-lang-key="language">Language Preferences</div>
+                            <div class="subtitle" data-lang-key="languageSub">Includes Regional Language Support</div>
+                        </div>
+                        <span class="chevron">></span>
+                    </div>
+                </div>
+                <button class="btn btn-logout" onclick="logout()" data-lang-key="logout">Log Out</button>
+            </div>
+        </section>
+
+        <!-- SCREEN: CASE DETAILS -->
+        <section id="screen-case-details" class="screen">
+            <div class="screen-header">
+                <button class="btn-sm" onclick="goBack()" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="caseDetails">Case Details</h1>
+                <button class="btn btn-sm primary" onclick="toggleBottomSheet('generate-draft-menu', true)" data-lang-key="generateDraft">Generate Draft</button>
+            </div>
+            <div style="padding: 0 16px;">
+                <h2 style="font-size: 18px; margin-top: 8px;">State of Maharashtra vs. Anil Sharma</h2>
+            </div>
+            <div class="tab-nav" id="case-details-tabs">
+                <div class="tab-item active" data-tab="timeline" data-lang-key="tabTimeline">Timeline</div>
+                <div class="tab-item" data-tab="ai-insights" data-lang-key="tabInsights">AI Insights</div>
+                <div class="tab-item" data-tab="billing" data-lang-key="tabBilling">Billing</div>
+                <div class="tab-item" data-tab="documents" data-lang-key="tabDocuments">Documents</div>
+            </div>
+            <div class="screen-content" style="padding-top: 0;">
+                <div id="tab-timeline" class="tab-content active">
+                    <div class="card"><strong><span data-lang-key="nextHearing">Next Hearing</span>:</strong> 03 October 2025</div>
+                    <div class="card"><strong>25 September 2025:</strong> Filed Vakalatnama</div>
+                    <div class="card"><strong>20 September 2025:</strong> Document Scan (Notice)</div>
+                    <div class="card"><strong>18 September 2025:</strong> Case Assigned</div>
+                </div>
+                 <div id="tab-ai-insights" class="tab-content">
+                    <h3 class="section-title" style="margin-top:0;" data-lang-key="caseStrength">Case Strength Analysis</h3>
+                    <div class="card">
+                        <ul class="insight-list">
+                            <li class="strength"><strong>Strength:</strong> Strong alibi for the client at the time of the incident.</li>
+                            <li class="strength"><strong>Strength:</strong> Inconsistencies in the primary witness statement.</li>
+                            <li class="weakness"><strong>Weakness:</strong> Lack of physical evidence to corroborate the alibi.</li>
+                        </ul>
+                    </div>
+                    <h3 class="section-title" data-lang-key="crossExam">Suggested Cross-Examination Questions</h3>
+                     <div class="card">
+                        <ul class="insight-list">
+                            <li>To Witness 1: "Can you confirm the exact time you saw the accused? How far were you?"</li>
+                            <li>To Investigating Officer: "What steps were taken to verify the alibi provided by my client on the day of the arrest?"</li>
+                        </ul>
+                    </div>
+                </div>
+                 <div id="tab-billing" class="tab-content">
+                     <div class="card stats-grid">
+                         <div class="stat-item">
+                            <div class="value">₹7,500</div>
+                            <div class="label" data-lang-key="totalBilled">Total Billed</div>
+                         </div>
+                         <div class="stat-item">
+                            <div class="value" style="color: var(--gold-accent);">₹2,500</div>
+                            <div class="label" data-lang-key="unpaid">Unpaid</div>
+                         </div>
+                     </div>
+                     <div class="card">
+                         <div class="billing-item">
+                             <span>Drafted Vakalatnama: 1 hr</span>
+                             <span class="status-badge paid" data-lang-key="paid">Paid</span>
+                         </div>
+                         <hr style="border-color: var(--border-color); margin: 8px 0;">
+                         <div class="billing-item">
+                             <span>Client Call: 0.5 hrs</span>
+                             <span class="status-badge paid" data-lang-key="paid">Paid</span>
+                         </div>
+                         <hr style="border-color: var(--border-color); margin: 8px 0;">
+                         <div class="billing-item">
+                            <span>Initial Consultation: 1 hr</span>
+                            <span class="status-badge unpaid" data-lang-key="unpaidStatus">Unpaid</span>
+                         </div>
+                     </div>
+                     <button class="btn primary" onclick="goToScreen('invoice-preview')" data-lang-key="generateInvoice">Generate Invoice</button>
+                </div>
+                 <div id="tab-documents" class="tab-content">
+                    <div class="card">
+                        <p><strong>Vakalatnama.pdf</strong> (Uploaded: 25 Sep 2025)</p>
+                        <p style="margin-top: 8px;"><strong>Notice_Scanned.jpg</strong> (Uploaded: 20 Sep 2025)</p>
+                        <p style="margin-top: 8px;"><strong>Charge_Sheet.pdf</strong> (Uploaded: 18 Sep 2025)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUB-SCREENS for SETTINGS -->
+        <section id="screen-settings-profile" class="screen">
+            <div class="screen-header">
+                <button class="btn-sm" onclick="goToScreen('settings')" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="profile">Profile</h1>
+                <div style="width: 50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div class="input-group">
+                    <label data-lang-key="fullName">Full Name</label>
+                    <input type="text" id="profile-name" value="Adv. Mehra">
+                </div>
+                <div class="input-group">
+                    <label data-lang-key="mobile">Mobile Number</label>
+                    <input type="tel" id="profile-mobile" value="+91 98765 43210">
+                </div>
+                <div class="input-group">
+                    <label data-lang-key="emailAddress">Email Address</label>
+                    <input type="email" id="profile-email" value="adv.mehra@example.com" disabled>
+                </div>
+                <div class="input-group">
+                    <label data-lang-key="address">Address</label>
+                    <textarea id="profile-address" rows="3">123, Law Chambers, Fort, Mumbai, Maharashtra</textarea>
+                </div>
+                 <div class="input-group">
+                    <label data-lang-key="degrees">Degrees</label>
+                    <div id="degrees-container">
+                        <div class="degree-input-container">
+                            <input type="text" class="degree-input" value="LLB">
+                        </div>
+                         <div class="degree-input-container">
+                            <input type="text" class="degree-input" value="B.Com">
+                        </div>
+                    </div>
+                     <button class="btn-sm" onclick="addDegreeInput()" style="margin-top: 8px;" data-lang-key="addDegree">Add Degree</button>
+                </div>
+                 <div class="input-group">
+                    <label data-lang-key="barId">Bar Council ID</label>
+                    <input type="text" id="profile-bar-id" value="MAH/1234/2015">
+                </div>
+                <h3 class="section-title" data-lang-key="statistics">Statistics</h3>
+                <div class="card stats-grid">
+                    <div class="stat-item">
+                        <div class="value">152</div>
+                        <div class="label" data-lang-key="casesFought">Cases Fought</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">85%</div>
+                        <div class="label" data-lang-key="successRate">Success Rate (Sim.)</div>
+                    </div>
+                </div>
+                <button class="btn primary" onclick="saveProfile()" data-lang-key="saveChanges">Save Changes</button>
+            </div>
+        </section>
+        <section id="screen-settings-notifications" class="screen">
+            <div class="screen-header">
+                <button class="btn-sm" onclick="goToScreen('settings')" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="notifications">Notifications</h1>
+                <div style="width: 50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div class="card">
+                    <label class="toggle-switch">
+                        <span data-lang-key="hearingReminders">Hearing Reminders</span>
+                        <input type="checkbox" checked><span class="slider"></span>
+                    </label>
+                    <hr style="border-color: var(--border-color); margin: 8px 0;">
+                    <label class="toggle-switch">
+                        <span data-lang-key="deadlineAlerts">Filing Deadline Alerts</span>
+                        <input type="checkbox" checked><span class="slider"></span>
+                    </label>
+                     <hr style="border-color: var(--border-color); margin: 8px 0;">
+                    <label class="toggle-switch">
+                        <span data-lang-key="clientMessages">New Client Messages</span>
+                        <input type="checkbox"><span class="slider"></span>
+                    </label>
+                </div>
+                <div class="card">
+                    <h4 class="section-title" style="margin-top:0;" data-lang-key="reminderTiming">Reminder Timing</h4>
+                    <div class="input-group">
+                        <label data-lang-key="hearingReminders">Hearing Reminders</label>
+                        <select>
+                            <option>1 Day Before</option>
+                            <option selected>2 Hours Before</option>
+                            <option>1 Hour Before</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label data-lang-key="deadlineAlerts">Filing Deadline Alerts</label>
+                        <select>
+                            <option>3 Days Before</option>
+                            <option selected>1 Day Before</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="screen-settings-subscription" class="screen">
+            <div class="screen-header">
+                <button class="btn-sm" onclick="goToScreen('settings')" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="subscription">Subscription</h1>
+                <div style="width: 50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div class="card">
+                    <p style="color:var(--text-secondary)" data-lang-key="currentPlan">Current Plan</p>
+                    <p style="font-size: 20px; font-weight: 600;">Vakeel Pro (Active)</p>
+                    <p id="subscription-renewal-info" style="margin-top: 8px; color: var(--gold-accent);"></p>
+                </div>
+                <h3 class="section-title" data-lang-key="choosePlan">Choose a new plan</h3>
+                <div class="subscription-plans">
+                    <div class="card plan-card card-clickable" onclick="selectSubscriptionPlan('Monthly', '₹199')">
+                        <h4 data-lang-key="monthly">Monthly</h4>
+                        <p style="font-size: 24px; font-weight: 700;">₹199</p>
+                    </div>
+                     <div class="card plan-card card-clickable" onclick="selectSubscriptionPlan('Quarterly', '₹399')">
+                        <h4 data-lang-key="quarterly">Quarterly (3 Months)</h4>
+                        <p style="font-size: 24px; font-weight: 700;">₹399</p>
+                    </div>
+                     <div class="card plan-card recommended card-clickable" onclick="selectSubscriptionPlan('Yearly', '₹999')">
+                         <div class="badge" data-lang-key="bestValue">Best Value</div>
+                        <h4 data-lang-key="yearly">Yearly</h4>
+                        <p style="font-size: 24px; font-weight: 700;">₹999</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="screen-settings-language" class="screen">
+            <div class="screen-header">
+                <button class="btn-sm" onclick="goToScreen('settings')" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="language">Language</h1>
+                <div style="width: 50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div class="card" id="language-selection-card">
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="en" checked> English</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="hi"> हिन्दी (Hindi)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="mr"> मराठी (Marathi)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="gu"> ગુજરાતી (Gujarati)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="pa"> ਪੰਜਾਬੀ (Punjabi)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="ta"> தமிழ் (Tamil)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="te"> తెలుగు (Telugu)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="ml"> മലയാളം (Malayalam)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="kn"> ಕನ್ನಡ (Kannada)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="bn"> বাংলা (Bengali)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="or"> ଓଡ଼ିଆ (Odia)</label>
+                    <label style="display:flex; align-items:center; gap:10px; padding: 8px 0;"><input type="radio" name="language" value="as"> অসমীয়া (Assamese)</label>
+                </div>
+                 <button class="btn primary" onclick="saveAndApplyLanguage()" data-lang-key="saveLanguage">Save Language</button>
+            </div>
+        </section>
+
+        <!-- REVIEW & CONFIRM SCREEN -->
+        <section id="screen-review-confirm" class="screen">
+            <div class="screen-header">
+                 <button class="btn-sm" onclick="goBack()" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="reviewConfirm">Review & Confirm</h1>
+                <div style="width:50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div class="card">
+                    <div class="input-group">
+                        <label data-lang-key="caseTitle">Case Title</label>
+                        <input type="text" id="review-case-title" value="State of Maharashtra vs. Anil Sharma">
+                    </div>
+                     <div class="input-group">
+                        <label data-lang-key="caseNumber">Case Number</label>
+                        <input type="text" id="review-case-number" value="CR/2025/5981">
+                    </div>
+                     <div class="input-group">
+                        <label data-lang-key="courtName">Court Name</label>
+                        <input type="text" id="review-court-name" value="Thane Sessions Court">
+                    </div>
+                     <div class="input-group">
+                        <label data-lang-key="nextHearingDate">Next Hearing Date (AI Suggested)</label>
+                        <input type="text" value="October 3, 2025" style="border-color: var(--gold-accent); border-width: 2px;">
+                    </div>
+                </div>
+                <button class="btn primary" onclick="goToScreen('case-details')" data-lang-key="confirmAdd">Confirm & Add to Cases</button>
+            </div>
+        </section>
+        
+        <!-- INVOICE PREVIEW SCREEN -->
+        <section id="screen-invoice-preview" class="screen">
+             <div class="screen-header">
+                 <button class="btn-sm" onclick="goBack()" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="invoicePreview">Invoice Preview</h1>
+                <div style="width:50px;"></div>
+            </div>
+            <div class="screen-content">
+                <div id="invoice-preview-content">
+                    <h3>Invoice</h3>
+                    <p><strong>From:</strong> Adv. Mehra</p>
+                    <p><strong>To:</strong> Anil Sharma</p>
+                    <hr style="margin: 10px 0;">
+                    <p><strong>Case:</strong> State of Maharashtra vs. Anil Sharma</p>
+                    <p><strong>Date:</strong> October 2, 2025</p>
+                    <hr style="margin: 10px 0;">
+                    <p>Drafted Vakalatnama: 1 hr</p>
+                    <p>Client Call: 0.5 hrs</p>
+                    <p>Initial Consultation: 1 hr</p>
+                    <hr style="margin: 10px 0;">
+                    <p><strong>Total Hours:</strong> 2.5 hrs</p>
+                    <p><strong>Total Amount:</strong> ₹7500</p>
+                </div>
+                <button class="btn primary" style="margin-top: 16px;" onclick="downloadInvoice()" data-lang-key="downloadPdf">Download PDF</button>
+            </div>
+        </section>
+        
+        <!-- CONTRACT ANALYSIS SCREEN -->
+        <section id="screen-contract-analysis" class="screen">
+            <div class="screen-header">
+                 <button class="btn-sm" onclick="goBack()" data-lang-key="back">Back</button>
+                <h1 class="title" data-lang-key="contractAnalysis">Contract Analysis</h1>
+                <div style="width:50px;"></div>
+            </div>
+            <div class="screen-content">
+                 <div class="card">
+                     <div id="contract-text-display" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;"></div>
+                 </div>
+                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+                     <button class="btn primary" onclick="analyzeContract()" data-lang-key="analyzeContract">Analyze for Red Flags</button>
+                     <label class="toggle-switch" style="padding:0; margin-left: 16px;">
+                        <span>Clean</span>
+                        <input type="checkbox" id="simulate-clean-contract-toggle"><span class="slider"></span>
+                    </label>
+                 </div>
+                 <div id="analysis-results-container"></div>
+            </div>
+        </section>
+
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav" id="main-nav">
+            <div class="nav-item active" data-screen="dashboard">
+                <span class="icon">🏠</span>
+                <span class="label" data-lang-key="navHome">Home</span>
+            </div>
+            <div class="nav-item" data-screen="all-cases">
+                <span class="icon">📁</span>
+                <span class="label" data-lang-key="navCases">Cases</span>
+            </div>
+            <div class="nav-item" data-screen="clients">
+                <span class="icon">👥</span>
+                <span class="label" data-lang-key="navClients">Clients</span>
+            </div>
+             <div class="nav-item" data-screen="ai-assistant">
+                <span class="icon">✨</span>
+                <span class="label" data-lang-key="navAssistant">Assistant</span>
+            </div>
+            <div class="nav-item" data-screen="settings">
+                <span class="icon">⚙️</span>
+                <span class="label" data-lang-key="navSettings">Settings</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="file-upload-input" style="display: none;" accept=".pdf, image/*">
+
+    <!-- Bottom Sheet Menus -->
+    <div id="add-menu-backdrop" class="bottom-sheet-backdrop" onclick="toggleBottomSheet('add-menu', false)"></div>
+    <div id="add-menu" class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-option" onclick="handleScanDocument()">
+            <span class="icon">📷</span>
+            <span data-lang-key="scanDoc">Scan Document</span>
+        </div>
+        <div class="sheet-option" onclick="triggerFileUpload()">
+            <span class="icon">📄</span>
+            <span data-lang-key="uploadDoc">Upload PDF/Image</span>
+        </div>
+        <div class="sheet-option" onclick="goToContractAnalysis()">
+            <span class="icon">🚩</span>
+            <span data-lang-key="analyzeContractMenu">Analyze Contract</span>
+        </div>
+        <div class="sheet-option" onclick="alert('Manual entry form would open here.')">
+            <span class="icon">✍️</span>
+            <span data-lang-key="manualEntry">Enter Manually</span>
+        </div>
+    </div>
+    
+    <div id="generate-draft-menu-backdrop" class="bottom-sheet-backdrop" onclick="toggleBottomSheet('generate-draft-menu', false)"></div>
+    <div id="generate-draft-menu" class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-option" onclick="generateAndDownloadPdf('Vakalatnama')">
+            <span>Vakalatnama</span>
+        </div>
+         <div class="sheet-option" onclick="generateAndDownloadPdf('Affidavit')">
+            <span>Affidavit</span>
+        </div>
+        <div class="sheet-option" onclick="generateAndDownloadPdf('Bail Application')">
+            <span>Bail Application</span>
+        </div>
+    </div>
+    
+    <div id="payment-method-menu-backdrop" class="bottom-sheet-backdrop" onclick="toggleBottomSheet('payment-method-menu', false)"></div>
+    <div id="payment-method-menu" class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 class="sheet-title" data-lang-key="addPaymentMethod">Add Payment Method</h3>
+        <div class="sheet-option" onclick="processPayment('GPay')">
+            <span class="icon">🇬</span>
+            <span>GPay</span>
+        </div>
+        <div class="sheet-option" onclick="processPayment('Paytm')">
+            <span class="icon" style="color: #00baf2;">🇵</span>
+            <span>Paytm</span>
+        </div>
+        <div class="sheet-option" onclick="processPayment('NetBanking')">
+            <span class="icon">🏦</span>
+            <span data-lang-key="netbanking">NetBanking</span>
+        </div>
+    </div>
+
+    <script>
+        
+        let screenHistory = ['login'];
+        let currentScreen = 'login';
+        let selectedPlan = {};
+        let uploadedDocuments = [];
+        // --- GEMINI API KEY ---
+        const GEMINI_API_KEY = "AIzaSyCmSnQ0IG0xPfPFw0vGk3kYuzVz3jTdOtE"; 
+        
+        // --- PDF.js Setup ---
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+
+
+        // --- Translation Data ---
+        const translations = {
+            en: {
+                appName: "Vakeel-AI",
+                tagline: "Your Intelligent Legal Partner",
+                loginGoogle: "Continue with Google",
+                loginEmail: "Continue with Email",
+                greeting: "Good evening, Adv. Mehra",
+                todaysHearings: "Today's Hearings",
+                courtroom: "Courtroom",
+                upcomingDeadlines: "Upcoming Deadlines (Next 7 Days)",
+                due: "Due",
+                tomorrow: "Tomorrow",
+                allCases: "All Cases",
+                nextHearing: "Next Hearing",
+                clients: "Clients",
+                clientDetails: "Client Details",
+                associatedCases: "Associated Cases",
+                aiAssistant: "AI Legal Assistant",
+                aiWelcome: "Hello! I am your AI Legal Assistant powered by Gemini. How can I help you today? You can ask me about legal precedents, drafting help, or case strategies.",
+                askPlaceholder: "Ask a legal question...",
+                send: "Send",
+                settings: "Settings",
+                profile: "Profile",
+                profileSub: "Manage your details",
+                notifications: "Notifications",
+                notificationsSub: "Hearing alerts, reminders",
+                subscription: "Subscription Management",
+                subscriptionSub: "Plan, invoices",
+                language: "Language Preferences",
+                languageSub: "Includes Regional Language Support",
+                logout: "Log Out",
+                back: "Back",
+                caseDetails: "Case Details",
+                generateDraft: "Generate Draft",
+                tabTimeline: "Timeline",
+                tabInsights: "AI Insights",
+                tabBilling: "Billing",
+                tabDocuments: "Documents",
+                readinessKit: "Courtroom Readiness Kit",
+                suggestedPrecedents: "Suggested Precedents",
+                caseStrength: "Case Strength Analysis",
+                crossExam: "Suggested Cross-Examination Questions",
+                totalBilled: "Total Billed",
+                unpaid: "Unpaid",
+                paid: "Paid",
+                unpaidStatus: "Unpaid",
+                generateInvoice: "Generate Invoice",
+                fullName: "Full Name",
+                emailAddress: "Email Address",
+                mobile: "Mobile Number",
+                address: "Address",
+                degrees: "Degrees",
+                addDegree: "Add Degree",
+                barId: "Bar Council ID",
+                statistics: "Statistics",
+                casesFought: "Cases Fought",
+                successRate: "Success Rate (Sim.)",
+                saveChanges: "Save Changes",
+                hearingReminders: "Hearing Reminders",
+                deadlineAlerts: "Filing Deadline Alerts",
+                clientMessages: "New Client Messages",
+                reminderTiming: "Reminder Timing",
+                currentPlan: "Current Plan",
+                choosePlan: "Choose a new plan",
+                monthly: "Monthly",
+                quarterly: "Quarterly (3 Months)",
+                yearly: "Yearly",
+                bestValue: "Best Value",
+                manageSub: "Manage Subscription",
+                saveLanguage: "Save Language",
+                reviewConfirm: "Review & Confirm",
+                caseTitle: "Case Title",
+                caseNumber: "Case Number",
+                courtName: "Court Name",
+                nextHearingDate: "Next Hearing Date (AI Suggested)",
+                confirmAdd: "Confirm & Add to Cases",
+                invoicePreview: "Invoice Preview",
+                downloadPdf: "Download PDF",
+                addPaymentMethod: "Add Payment Method",
+                netbanking: "NetBanking",
+                contractAnalysis: "Contract Analysis",
+                analyzeContract: "Analyze for Red Flags",
+                analyzeContractMenu: "Analyze Contract",
+                redFlagsFound: "Red Flags Found",
+                noRedFlags: "No significant red flags found. The contract appears balanced.",
+                analyzing: "Analyzing, please wait...",
+                redFlag1: "One-sided termination clause.",
+                redFlag1Desc: "This clause allows only Party B to terminate the agreement without cause, creating an unfair advantage.",
+                redFlag2: "Ambiguous liability cap.",
+                redFlag2Desc: "The term 'reasonable damages' is not clearly defined and could lead to disputes over the liability amount.",
+                navHome: "Home",
+                navCases: "Cases",
+                navClients: "Clients",
+                navAssistant: "Assistant",
+                navSettings: "Settings",
+                scanDoc: "Scan Document",
+                uploadDoc: "Upload PDF/Image",
+                manualEntry: "Enter Manually",
+            },
+            mr: {
+                appName: "वकील-एआय",
+                tagline: "तुमचा बुद्धिमान कायदेशीर भागीदार",
+                loginGoogle: "Google ने सुरू ठेवा",
+                loginEmail: "ईमेलने सुरू ठेवा",
+                greeting: "शुभ संध्या, ॲड. मेहरा",
+                todaysHearings: "आजची सुनावणी",
+                courtroom: "न्यायालयीन खोली",
+                upcomingDeadlines: "आगामी अंतिम मुदत (पुढील ७ दिवस)",
+                due: "देय",
+                tomorrow: "उद्या",
+                allCases: "सर्व प्रकरणे",
+                nextHearing: "पुढील सुनावणी",
+                clients: "ग्राहक",
+                clientDetails: "ग्राहकाची माहिती",
+                associatedCases: "संबंधित प्रकरणे",
+                aiAssistant: "एआय कायदेशीर सहाय्यक",
+                aiWelcome: "नमस्कार! मी तुमचा जेमिनीद्वारे चालणारा एआय कायदेशीर सहाय्यक आहे. मी आज तुमची कशी मदत करू शकेन?",
+                askPlaceholder: "कायदेशीर प्रश्न विचारा...",
+                send: "पाठवा",
+                settings: "सेटिंग्ज",
+                profile: "प्रोफाइल",
+                profileSub: "तुमची माहिती व्यवस्थापित करा",
+                notifications: "सूचना",
+                notificationsSub: "सुनावणी सूचना, स्मरणपत्रे",
+                subscription: "वर्गणी व्यवस्थापन",
+                subscriptionSub: "योजना, पावत्या",
+                language: "भाषा प्राधान्ये",
+                languageSub: "प्रादेशिक भाषा समर्थन समाविष्ट आहे",
+                logout: "लॉग आउट करा",
+                back: "मागे",
+                caseDetails: "प्रकरणाची माहिती",
+                generateDraft: "मसुदा तयार करा",
+                tabTimeline: "टाइमलाइन",
+                tabInsights: "एआय अंतर्दृष्टी",
+                tabBilling: "बिलिंग",
+                tabDocuments: "कागदपत्रे",
+                readinessKit: "कोर्टरूम तयारी किट",
+                suggestedPrecedents: "सुचवलेले पूर्वीचे निर्णय",
+                caseStrength: "प्रकरणाचे सामर्थ्य विश्लेषण",
+                crossExam: "सुचवलेले उलटतपासणी प्रश्न",
+                totalBillable: "एकूण बिल केलेले",
+                unpaid: "न भरलेले",
+                paid: "भरलेले",
+                unpaidStatus: "न भरलेले",
+                generateInvoice: "पावती तयार करा",
+                fullName: "पूर्ण नाव",
+                emailAddress: "ईमेल पत्ता",
+                mobile: "मोबाईल नंबर",
+                address: "पत्ता",
+                degrees: "पदव्या",
+                addDegree: "पदवी जोडा",
+                barId: "बार कौन्सिल आयडी",
+                statistics: "आकडेवारी",
+                casesFought: "लढलेली प्रकरणे",
+                successRate: "यशाचा दर (सिम.)",
+                saveChanges: "बदल जतन करा",
+                hearingReminders: "सुनावणी स्मरणपत्रे",
+                deadlineAlerts: "अंतिम मुदत सूचना",
+                clientMessages: "नवीन ग्राहक संदेश",
+                reminderTiming: "स्मरणपत्र वेळ",
+                currentPlan: "सध्याची योजना",
+                choosePlan: "नवीन योजना निवडा",
+                monthly: "मासिक",
+                quarterly: "त्रैमासिक (३ महिने)",
+                yearly: "वार्षिक",
+                bestValue: "उत्तम मूल्य",
+                manageSub: "वर्गणी व्यवस्थापित करा",
+                saveLanguage: "भाषा जतन करा",
+                reviewConfirm: "पुनरावलोकन आणि पुष्टी करा",
+                caseTitle: "प्रकरणाचे शीर्षक",
+                caseNumber: "प्रकरण क्रमांक",
+                courtName: "न्यायालयाचे नाव",
+                nextHearingDate: "पुढील सुनावणीची तारीख (एआय सुचवलेली)",
+                confirmAdd: "पुष्टी करा आणि प्रकरणांमध्ये जोडा",
+                invoicePreview: "पावती पूर्वावलोकन",
+                downloadPdf: "पीडीएफ डाउनलोड करा",
+                addPaymentMethod: "पेमेंट पद्धत जोडा",
+                netbanking: "नेटबँकिंग",
+                contractAnalysis: "करार विश्लेषण",
+                analyzeContract: "रेड फ्लॅगसाठी विश्लेषण करा",
+                analyzeContractMenu: "करार विश्लेषण करा",
+                redFlagsFound: "रेड फ्लॅग आढळले",
+                noRedFlags: "कोणतेही महत्त्वपूर्ण रेड फ्लॅग आढळले नाहीत. करार संतुलित दिसतो.",
+                analyzing: "विश्लेषण करत आहे, कृपया प्रतीक्षा करा...",
+                redFlag1: "एकतर्फी समाप्ती कलम.",
+                redFlag1Desc: "हे कलम केवळ पक्ष बी ला कोणत्याही कारणाशिवाय करार समाप्त करण्याची परवानगी देते, ज्यामुळे एक अयोग्य फायदा मिळतो.",
+                redFlag2: "अस्पष्ट दायित्व मर्यादा.",
+                redFlag2Desc: "'वाजवी नुकसान' या शब्दाची स्पष्टपणे व्याख्या केलेली नाही आणि यामुळे दायित्वाच्या रकमेवरून वाद होऊ शकतात.",
+                navHome: "मुख्यपृष्ठ",
+                navCases: "प्रकरणे",
+                navClients: "ग्राहक",
+                navAssistant: "सहाय्यक",
+                navSettings: "सेटिंग्ज",
+                scanDoc: "दस्तऐवज स्कॅन करा",
+                uploadDoc: "पीडीएफ/प्रतिमा अपलोड करा",
+                manualEntry: "स्वतः प्रविष्ट करा",
+            },
+            hi: {
+                appName: "वकील-एआई",
+                tagline: "आपका बुद्धिमान कानूनी साथी",
+                loginGoogle: "Google के साथ जारी रखें",
+                loginEmail: "ईमेल के साथ जारी रखें",
+                greeting: "शुभ संध्या, एड. मेहरा",
+                todaysHearings: "आज की सुनवाई",
+                courtroom: "न्यायालय कक्ष",
+                upcomingDeadlines: "आगामी समय-सीमा (अगले 7 दिन)",
+                due: "देय",
+                tomorrow: "कल",
+                allCases: "सभी मामले",
+                nextHearing: "अगली सुनवाई",
+                clients: "ग्राहक",
+                clientDetails: "ग्राहक विवरण",
+                associatedCases: "संबंधित मामले",
+                aiAssistant: "एआई कानूनी सहायक",
+                aiWelcome: "नमस्ते! मैं आपका जेमिनी द्वारा संचालित एआई कानूनी सहायक हूं। मैं आज आपकी कैसे मदद कर सकता हूं?",
+                askPlaceholder: "एक कानूनी प्रश्न पूछें...",
+                send: "भेजें",
+                settings: "सेटिंग्स",
+                profile: "प्रोफ़ाइल",
+                profileSub: "अपना विवरण प्रबंधित करें",
+                notifications: "सूचनाएं",
+                notificationsSub: "सुनवाई अलर्ट, अनुस्मारक",
+                subscription: "सदस्यता प्रबंधन",
+                subscriptionSub: "योजना, चालान",
+                language: "भाषा प्राथमिकताएं",
+                languageSub: "क्षेत्रीय भाषा समर्थन शामिल है",
+                logout: "लॉग आउट करें",
+                back: "वापस",
+                caseDetails: "मामले का विवरण",
+                generateDraft: "प्रारूप तैयार करें",
+                tabTimeline: "समयरेखा",
+                tabInsights: "एआई अंतर्दृष्टि",
+                tabBilling: "बिलिंग",
+                tabDocuments: "दस्तावेज़",
+                readinessKit: "कोर्टरूम तैयारी किट",
+                suggestedPrecedents: "सुझाए गए उदाहरण",
+                caseStrength: "मामले की ताकत का विश्लेषण",
+                crossExam: "सुझाए गए जिरह प्रश्न",
+                totalBillable: "कुल बिल किया गया",
+                unpaid: "अदत्त",
+                paid: "भुगतान किया गया",
+                unpaidStatus: "अदत्त",
+                generateInvoice: "चालान बनाएं",
+                fullName: "पूरा नाम",
+                emailAddress: "ईमेल पता",
+                mobile: "मोबाइल नंबर",
+                address: "पता",
+                degrees: "डिग्री",
+                addDegree: "डिग्री जोड़ें",
+                barId: "बार काउंसिल आईडी",
+                statistics: "आंकड़े",
+                casesFought: "लड़े गए मामले",
+                successRate: "सफलता दर (सिम.)",
+                saveChanges: "बदलाव सहेजें",
+                hearingReminders: "सुनवाई अनुस्मारक",
+                deadlineAlerts: "समय-सीमा अलर्ट",
+                clientMessages: "नए ग्राहक संदेश",
+                reminderTiming: "अनुस्मारक समय",
+                currentPlan: "वर्तमान योजना",
+                choosePlan: "एक नई योजना चुनें",
+                monthly: "मासिक",
+                quarterly: "त्रैमासिक (3 महीने)",
+                yearly: "वार्षिक",
+                bestValue: "सबसे बेहतर",
+                manageSub: "सदस्यता प्रबंधित करें",
+                saveLanguage: "भाषा सहेजें",
+                reviewConfirm: "समीक्षा और पुष्टि करें",
+                caseTitle: "मामले का शीर्षक",
+                caseNumber: "मामला संख्या",
+                courtName: "न्यायालय का नाम",
+                nextHearingDate: "अगली सुनवाई की तारीख (एआई द्वारा सुझाई गई)",
+                confirmAdd: "पुष्टि करें और मामलों में जोड़ें",
+                invoicePreview: "चालान पूर्वावलोकन",
+                downloadPdf: "पीडीएफ डाउनलोड करें",
+                addPaymentMethod: "भुगतान विधि जोड़ें",
+                netbanking: "नेटबैंकिंग",
+                contractAnalysis: "अनुबंध विश्लेषण",
+                analyzeContract: "रेड फ्लैग के लिए विश्लेषण करें",
+                analyzeContractMenu: "अनुबंध का विश्लेषण करें",
+                redFlagsFound: "रेड फ्लैग मिले",
+                noRedFlags: "कोई महत्वपूर्ण रेड फ्लैग नहीं मिला। अनुबंध संतुलित प्रतीत होता है।",
+                analyzing: "विश्लेषण हो रहा है, कृपया प्रतीक्षा करें...",
+                redFlag1: "एकतरफा समाप्ति खंड।",
+                redFlag1Desc: "यह खंड केवल पार्टी बी को बिना कारण बताए समझौते को समाप्त करने की अनुमति देता है, जिससे एक अनुचित लाभ बनता है।",
+                redFlag2: "अस्पष्ट देयता सीमा।",
+                redFlag2Desc: "'उचित नुकसान' शब्द को स्पष्ट रूप से परिभाषित नहीं किया गया है और इससे देयता राशि पर विवाद हो सकता है।",
+                navHome: "होम",
+                navCases: "मामले",
+                navClients: "ग्राहक",
+                navAssistant: "सहायक",
+                navSettings: "सेटिंग्स",
+                scanDoc: "दस्तावेज़ स्कैन करें",
+                uploadDoc: "पीडीएफ/छवि अपलोड करें",
+                manualEntry: "मैन्युअल रूप से दर्ज करें",
+            }
+        };
+        
+        // --- Navigation Logic ---
+        function goToScreen(screenId) {
+            // Special handling for auth screens
+            if (['login', 'email-login', 'signup'].includes(screenId)) {
+                document.getElementById('main-nav').style.display = 'none';
+            } else {
+                document.getElementById('main-nav').style.display = 'flex';
+            }
+        
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${screenId}`).classList.add('active');
+            
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.toggle('active', item.dataset.screen === screenId);
+            });
+
+            if (currentScreen !== screenId) {
+                if(!screenId.startsWith('settings-') && screenId !== 'invoice-preview' && screenId !== 'contract-analysis') {
+                   if(screenHistory[screenHistory.length - 1] !== screenId) {
+                       screenHistory.push(screenId);
+                   }
+                }
+                currentScreen = screenId;
+            }
+            
+            if (screenId === 'settings-subscription') {
+                updateSubscriptionDetails();
+            }
+        }
+
+        function goBack() {
+            if (screenHistory.length > 1) {
+                screenHistory.pop(); 
+                const previousScreen = screenHistory[screenHistory.length - 1];
+                 // If going back to an auth screen, hide nav
+                if (['login', 'email-login', 'signup'].includes(previousScreen)) {
+                    document.getElementById('main-nav').style.display = 'none';
+                } else {
+                    document.getElementById('main-nav').style.display = 'flex';
+                }
+                
+                currentScreen = previousScreen;
+
+                const screens = document.querySelectorAll('.screen');
+                screens.forEach(s => s.classList.remove('active'));
+                document.getElementById(`screen-${previousScreen}`).classList.add('active');
+
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(item => {
+                    item.classList.toggle('active', item.dataset.screen === previousScreen);
+                });
+            }
+        }
+        
+        // --- Auth Flow ---
+        function login(method) {
+            let name = "Adv. Mehra"; // Default name
+            alert(`Simulating login via ${method}...`);
+            document.getElementById('dashboard-greeting').textContent = `Good evening, ${name}`;
+            screenHistory = ['dashboard']; // Reset history on login
+            goToScreen('dashboard');
+        }
+        
+        function handleSignup() {
+            const name = document.getElementById('signup-name').value;
+            if (!name) {
+                alert("Please enter your full name.");
+                return;
+            }
+            alert(`Account created for ${name}!`);
+            document.getElementById('dashboard-greeting').textContent = `Good evening, ${name}`;
+            screenHistory = ['dashboard']; // Reset history on signup
+            goToScreen('dashboard');
+        }
+
+        function logout() {
+            alert("Logging out...");
+            screenHistory = ['login']; // Reset history
+            currentScreen = 'login';
+            goToScreen('login');
+        }
+
+
+        // --- Bottom Nav Click Handler ---
+        document.getElementById('main-nav').addEventListener('click', function(e) {
+            const navItem = e.target.closest('.nav-item');
+            if (navItem && navItem.dataset.screen) {
+                goToScreen(navItem.dataset.screen);
+            }
+        });
+
+        // --- Bottom Sheet Logic ---
+        function toggleBottomSheet(sheetId, show) {
+            const sheet = document.getElementById(sheetId);
+            const backdrop = document.getElementById(`${sheetId}-backdrop`);
+            if (show) {
+                sheet.classList.add('visible');
+                backdrop.classList.add('visible');
+            } else {
+                sheet.classList.remove('visible');
+                backdrop.classList.remove('visible');
+            }
+        }
+
+        function handleScanDocument() {
+            alert("Camera would open to scan a document. Simulating scan result...");
+            toggleBottomSheet('add-menu', false);
+            goToScreen('review-confirm');
+        }
+
+        // --- File Upload Logic ---
+        const fileInput = document.getElementById('file-upload-input');
+        function triggerFileUpload() {
+            fileInput.click();
+        }
+        
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64String = e.target.result.split(',')[1];
+                    const fileData = { name: file.name, type: file.type, data: base64String };
+                    uploadedDocuments.push(fileData);
+                    updateUIAfterUpload(file.name, file.type);
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type === 'application/pdf') {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const arrayBuffer = e.target.result;
+                    try {
+                        const loadingTask = pdfjsLib.getDocument(arrayBuffer);
+                        const pdf = await loadingTask.promise;
+                        let fullText = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            const pageText = textContent.items.map(item => item.str).join(' ');
+                            fullText += pageText + '\n\n';
+                        }
+                        const fileData = { name: file.name, type: 'pdf', data: fullText.trim() };
+                        uploadedDocuments.push(fileData);
+                        updateUIAfterUpload(file.name, file.type);
+                    } catch (error) {
+                        console.error("Error parsing PDF:", error);
+                        alert("Sorry, there was an error processing this PDF.");
+                        toggleBottomSheet('add-menu', false);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                const fileData = { name: file.name, type: 'other', data: null };
+                uploadedDocuments.push(fileData);
+                updateUIAfterUpload(file.name, file.type);
+            }
+        });
+
+        function updateUIAfterUpload(fileName, fileType) {
+            const docList = document.querySelector('#tab-documents .card');
+            if (docList) {
+                const newDocP = document.createElement('p');
+                const date = new Date();
+                const formattedDate = `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
+                newDocP.innerHTML = `<strong>${fileName}</strong> (Uploaded: ${formattedDate})`;
+                newDocP.style.marginTop = '8px';
+                docList.appendChild(newDocP);
+            }
+            
+            toggleBottomSheet('add-menu', false);
+
+            if (fileType === 'application/pdf') {
+                goToScreen('review-confirm');
+            } else {
+                alert(`${fileName} has been uploaded and is now part of the case context.`);
+                if(currentScreen !== 'case-details') {
+                    goToScreen('case-details');
+                }
+            }
+        }
+        
+        // --- Contract Analysis Logic ---
+        const sampleContractText = `This Service Agreement is made between Party A and Party B.
+Party A agrees to provide marketing services.
+Party B agrees to pay a monthly fee of ₹50,000.
+This agreement shall commence on October 1, 2025.
+Party B may terminate this agreement at any time with 30 days notice. Party A may not terminate without cause.
+In case of breach, the liability of Party A shall not exceed the total fees paid in the preceding three months, excluding any claims for reasonable damages.
+All disputes shall be resolved via arbitration in Mumbai.`;
+
+        function goToContractAnalysis() {
+            document.getElementById('contract-text-display').textContent = sampleContractText;
+            document.getElementById('analysis-results-container').innerHTML = ''; // Clear previous results
+            toggleBottomSheet('add-menu', false);
+            goToScreen('contract-analysis');
+        }
+
+        function analyzeContract() {
+            const resultsContainer = document.getElementById('analysis-results-container');
+            const contractDisplay = document.getElementById('contract-text-display');
+            const isClean = document.getElementById('simulate-clean-contract-toggle').checked;
+
+            resultsContainer.innerHTML = `<div class="card"><p>${translations[getCurrentLang()].analyzing}</p></div>`;
+
+            setTimeout(() => {
+                if (isClean) {
+                    contractDisplay.textContent = sampleContractText; // Show original text
+                    resultsContainer.innerHTML = `<div class="card" style="border-color: var(--success);"><p>${translations[getCurrentLang()].noRedFlags}</p></div>`;
+                } else {
+                    let highlightedText = sampleContractText
+                        .replace('Party B may terminate this agreement at any time with 30 days notice. Party A may not terminate without cause.', '<span class="red-flag-highlight">Party B may terminate this agreement at any time with 30 days notice. Party A may not terminate without cause.</span>')
+                        .replace('reasonable damages', '<span class="red-flag-highlight">reasonable damages</span>');
+                    contractDisplay.innerHTML = highlightedText;
+                    
+                    resultsContainer.innerHTML = `
+                        <div class="card" style="border-color: var(--danger);">
+                            <h4 class="section-title" style="margin-top:0;" data-lang-key="redFlagsFound">${translations[getCurrentLang()].redFlagsFound}</h4>
+                            <ul class="insight-list">
+                                <li>
+                                    <strong data-lang-key="redFlag1">${translations[getCurrentLang()].redFlag1}</strong>
+                                    <p style="color:var(--text-secondary);" data-lang-key="redFlag1Desc">${translations[getCurrentLang()].redFlag1Desc}</p>
+                                </li>
+                                <li style="margin-top: 12px;">
+                                    <strong data-lang-key="redFlag2">${translations[getCurrentLang()].redFlag2}</strong>
+                                    <p style="color:var(--text-secondary);" data-lang-key="redFlag2Desc">${translations[getCurrentLang()].redFlag2Desc}</p>
+                                </li>
+                            </ul>
+                        </div>
+                    `;
+                }
+            }, 1500);
+        }
+
+        // --- Generate PDF Draft Logic ---
+        function generateAndDownloadPdf(templateType) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const caseTitle = "State of Maharashtra vs. Anil Sharma";
+            const caseNumber = "CR/2025/5981";
+            
+            let content = ``;
+            if(templateType === 'Vakalatnama') {
+                content = `IN THE COURT OF THE SESSIONS JUDGE, THANE\n\nCASE: ${caseTitle}\nNUMBER: ${caseNumber}\n\nI, Adv. Mehra, do hereby appear and plead on behalf of the accused, Anil Sharma...`;
+            } else if (templateType === 'Affidavit') {
+                content = `BEFORE THE HON'BLE SESSIONS COURT AT THANE\n\nCASE: ${caseTitle}\nNUMBER: ${caseNumber}\n\nI, Anil Sharma, son of..., aged..., residing at..., do solemnly affirm and state as follows...`;
+            } else {
+                 content = `DRAFT FOR: ${templateType}\n\nCASE: ${caseTitle}\nNUMBER: ${caseNumber}\n\n[Content for ${templateType} would be generated here based on case data.]`;
+            }
+
+            doc.setFontSize(18);
+            doc.text(templateType, 10, 20);
+            doc.setFontSize(12);
+            doc.text(content, 10, 30, { maxWidth: 190 });
+            doc.save(`${templateType}_${caseNumber}.pdf`);
+
+            toggleBottomSheet('generate-draft-menu', false);
+        }
+        
+        // --- Invoice Logic ---
+        function downloadInvoice() {
+             const { jsPDF } = window.jspdf;
+             const doc = new jsPDF();
+             const invoiceContent = document.getElementById('invoice-preview-content').innerText;
+             doc.setFontSize(12);
+             doc.text(invoiceContent, 10, 10, { maxWidth: 190 });
+             doc.save(`Invoice_Anil_Sharma.pdf`);
+        }
+
+        // --- Client Details Logic ---
+        function goToClientDetails(name, email, caseName) {
+            document.getElementById('client-name-details').textContent = name;
+            document.getElementById('client-email-details').textContent = email;
+            const casesList = document.getElementById('client-cases-list');
+            casesList.innerHTML = `<div class="card card-clickable" onclick="goToScreen('case-details')">${caseName}</div>`;
+            goToScreen('client-details');
+        }
+        
+        // --- Profile Logic ---
+        function addDegreeInput() {
+            const container = document.getElementById('degrees-container');
+            const newDiv = document.createElement('div');
+            newDiv.className = 'degree-input-container';
+            newDiv.innerHTML = `<input type="text" class="degree-input" placeholder="e.g., LLM">`;
+            container.appendChild(newDiv);
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('profile-name').value;
+            const mobile = document.getElementById('profile-mobile').value;
+            const address = document.getElementById('profile-address').value;
+            const barId = document.getElementById('profile-bar-id').value;
+            const degreeInputs = document.querySelectorAll('.degree-input');
+            let degrees = [];
+            degreeInputs.forEach(input => {
+                if(input.value) degrees.push(input.value)
+            });
+            
+            alert(`Profile Saved!\nName: ${name}\nMobile: ${mobile}\nAddress: ${address}\nDegrees: ${degrees.join(', ')}\nBar ID: ${barId}`);
+            goToScreen('settings');
+        }
+        
+        // --- Subscription Details Logic ---
+        function selectSubscriptionPlan(name, price) {
+            selectedPlan = { name, price };
+            toggleBottomSheet('payment-method-menu', true);
+        }
+        
+        function processPayment(method) {
+            alert(`Processing payment for ${selectedPlan.name} plan (${selectedPlan.price}) via ${method}...`);
+            toggleBottomSheet('payment-method-menu', false);
+        }
+
+        function updateSubscriptionDetails() {
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + 13);
+            
+            const today = new Date();
+            const diffTime = futureDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const renewalInfoEl = document.getElementById('subscription-renewal-info');
+            const lang = getCurrentLang();
+            
+            let text = `Your subscription expires in ${diffDays} days.`;
+            if(lang === 'mr') text = `तुमची वर्गणी ${diffDays} दिवसात कालबाह्य होईल.`;
+            if(lang === 'hi') text = `आपकी सदस्यता ${diffDays} दिनों में समाप्त हो जाएगी।`;
+
+            if (diffDays > 0) {
+                renewalInfoEl.textContent = text;
+            } else {
+                 renewalInfoEl.textContent = `Your subscription has expired.`;
+            }
+        }
+        
+        // --- Case Details Tab Logic ---
+        document.getElementById('case-details-tabs').addEventListener('click', function(e){
+            const tabItem = e.target.closest('.tab-item');
+            if(tabItem){
+                this.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('#screen-case-details .tab-content').forEach(c => c.classList.remove('active'));
+                
+                tabItem.classList.add('active');
+                document.getElementById(`tab-${tabItem.dataset.tab}`).classList.add('active');
+            }
+        });
+        
+        // --- Language Switching Logic ---
+        function getCurrentLang() {
+            return localStorage.getItem('vakeel-lang') || 'en';
+        }
+
+        function applyLanguage(lang) {
+            if (!translations[lang]) lang = 'en';
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.dataset.langKey;
+                const translation = translations[lang][key] || translations.en[key];
+                if (el.placeholder) {
+                    el.placeholder = translation;
+                } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
+                    // This is for future use if form elements need dynamic labels
+                } else {
+                    el.textContent = translation;
+                }
+            });
+            document.documentElement.lang = lang;
+        }
+        
+        function saveAndApplyLanguage() {
+            const selectedLang = document.querySelector('#language-selection-card input[name="language"]:checked').value;
+            localStorage.setItem('vakeel-lang', selectedLang);
+            applyLanguage(selectedLang);
+            alert("Language saved!");
+            goToScreen('settings');
+        }
+
+        // --- Gemini AI Assistant Logic ---
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatContainer = document.getElementById('chat-container');
+        
+        function getCaseContext() {
+            let context = "Current Case Context:\n";
+            const caseDetailsScreen = document.getElementById('screen-case-details');
+            
+            if (caseDetailsScreen.classList.contains('active')) {
+                const caseTitle = caseDetailsScreen.querySelector('h2').textContent.trim();
+                const timeline = document.getElementById('tab-timeline').innerText;
+                const insights = document.getElementById('tab-ai-insights').innerText;
+                const documents = document.getElementById('tab-documents').innerText;
+
+                context += `Case Title: ${caseTitle}\n\n`;
+                context += `--- Timeline Info ---\n${timeline}\n\n`;
+                context += `--- AI Insights Provided ---\n${insights}\n\n`;
+                context += `--- Known Documents List ---\n${documents}\n\n`;
+            } else {
+                context += "No specific case is currently being viewed. The user is in a general area of the app.\n";
+                const allCases = document.getElementById('screen-all-cases').innerText;
+                const allClients = document.getElementById('screen-clients').innerText;
+                context += `\n--- List of All Cases ---\n${allCases}`;
+                context += `\n\n--- List of All Clients ---\n${allClients}`;
+            }
+
+            if (uploadedDocuments.length > 0) {
+                context += "\n--- Note: The user has also just uploaded the following documents ---\n";
+                uploadedDocuments.forEach(doc => {
+                    context += `- ${doc.name} (Type: ${doc.type})\n`;
+                    if (doc.type === 'pdf' && doc.data) {
+                        context += `\n--- Full Text of ${doc.name} ---\n${doc.data}\n--- End of Text for ${doc.name} ---\n\n`;
+                    }
+                });
+            }
+            
+            return context;
+        }
+
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userInput = chatInput.value.trim();
+            if (!userInput) return;
+
+            addMessageToChat(userInput, 'user');
+            chatInput.value = '';
+
+            const loadingBubble = addMessageToChat('...', 'ai', true);
+            
+            try {
+                const aiResponse = await callGemini(userInput);
+                loadingBubble.textContent = aiResponse;
+                loadingBubble.classList.remove('loading');
+            } catch(error) {
+                loadingBubble.textContent = 'Sorry, I encountered an error. Please try again.';
+                loadingBubble.classList.remove('loading');
+                console.error("Gemini API Error:", error);
+            }
+        });
+
+        function addMessageToChat(text, sender, isLoading = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'chat-bubble';
+            bubbleDiv.textContent = text;
+            if(isLoading) {
+                bubbleDiv.classList.add('loading');
+            }
+
+            messageDiv.appendChild(bubbleDiv);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return bubbleDiv;
+        }
+
+        async function callGemini(prompt) {
+            const caseContext = getCaseContext();
+            const fullPrompt = `${caseContext}\n\nBased on the context above, answer the following question from the user:\n\nUser's Question: "${prompt}"`;
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`;
+
+            const systemPrompt = "You are Vakeel-AI, an expert legal AI assistant for Indian law. You have been provided with context about the user's current case from their case management app. Use this context to answer their questions accurately. The user has uploaded documents listed in the context. When asked about them, acknowledge you are aware of them. For images, you can describe their content. For PDFs, their full text content has been provided in the context under a 'Full Text of...' header; you must use this content to answer questions about the PDF. If the question is not related to the provided context, answer it as a general legal query. Always be concise and relevant. Do not provide legal advice, but you can explain legal concepts, summarize case details, and suggest strategies based on the provided information. Your primary goal is to be a helpful tool for a lawyer.";
+
+            const payload = {
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                contents: [{
+                    parts: [{ text: fullPrompt }]
+                }]
+            };
+
+            const lastImage = uploadedDocuments.slice().reverse().find(d => d.type.startsWith('image/'));
+            if (lastImage && lastImage.data) {
+                 payload.contents[0].parts.push({
+                    inlineData: {
+                        mimeType: lastImage.type,
+                        data: lastImage.data
+                    }
+                });
+            }
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                 const errorBody = await response.text();
+                 console.error("API Error Response:", errorBody);
+                 throw new Error(`API call failed with status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                return candidate.content.parts[0].text;
+            } else {
+                console.error("Unexpected API response structure:", result);
+                return "I could not generate a response. The API returned an unexpected result.";
+            }
+        }
+        
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('vakeel-lang') || 'en';
+            document.querySelector(`#language-selection-card input[value="${savedLang}"]`).checked = true;
+            applyLanguage(savedLang);
+            goToScreen('login'); // Start at login screen
+        });
+
+    </script>
+</body>
+</html>
+
