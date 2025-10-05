@@ -20,7 +20,7 @@ exports.handler = async function(event, context) {
 
     // The endpoint name is part of the path, e.g., /api/gemini
     const endpoint = event.path.split('/').pop();
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
 
     try {
         const body = JSON.parse(event.body);
